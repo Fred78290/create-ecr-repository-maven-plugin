@@ -9,12 +9,12 @@ To install this plugin locally, run the following commands:
 <br>
 
 ```bash
-git clone https://github.com/Fred78290/delete-codeartifact-maven-plugin.git
-cd delete-codeartifact-maven-plugin
+git clone https://github.com/Fred78290/create-ecr-repository-maven-plugin.git
+cd create-ecr-repository-maven-plugin
 mvn clean install
 ```
 
-The documentation plugin is available [here](https://fred78290.github.io/delete-codeartifact-maven-plugin/)
+The documentation plugin is available [here](https://fred78290.github.io/create-ecr-repository-maven-plugin/)
 
 ## Usage in POM
 
