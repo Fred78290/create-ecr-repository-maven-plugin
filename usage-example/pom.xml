@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>sample-package</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.aldunelabs.maven.codeartifact</groupId>
+                <artifactId>create-ecr-repository-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <configuration>
+                    <region>${env.AWS_REGION}</region>
+                    <profile>${env.AWS_PROFILE}</profile>
+                    <accesskey>${env.AWS_ACCESSKEY}</accesskey>
+                    <secretkey>${env.AWS_SECRETKEY}</secretkey>
+                    <token>${env.AWS_SESSIONTOKEN}</token>
+                    <repository>${env.ECR_REPOSITORY}</repository>
+                    <mutable>true|false|${env.ECR_MUTABLE}</mutable>
+                    <registryId>${env.ECR_REGISTRY_ID}</registryId>
+                    <lifecycleUrl>URL to lifecycle policy</lifecycleUrl>
+                    <permissionsUrl>URL to permission policy</permissionsUrl>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <pluginRepositories>
+		<pluginRepository>
+			<id>github</id>
+			<url>https://maven.pkg.github.com/Fred78290/create-ecr-repository-maven-plugin</url>
+		</pluginRepository>
+	</pluginRepositories>
+
+</project>
