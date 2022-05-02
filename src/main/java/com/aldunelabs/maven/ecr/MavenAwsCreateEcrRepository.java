@@ -71,14 +71,20 @@ public class MavenAwsCreateEcrRepository extends AbstractMojo {
 	@Parameter(defaultValue = "", name = "kmsKey", property = "ECR_KMS_KEY")
 	String kmsKey;
 
+	private static boolean isNullOrEmpty(String str) {
+		if (str == null)
+			return true;
+		return str.isEmpty();
+	}
+
 	private AWSCredentialsProvider buildCredentialsProvider() {
 
-		if (profile != null && !profile.isEmpty()) {
+		if (isNullOrEmpty(profile) == false) {
 			return new ProfileCredentialsProvider(profile);
-		} else if (accesskey != null && secretkey != null && token != null && !accesskey.isEmpty()
-				&& !secretkey.isEmpty() && !token.isEmpty()) {
+		} else if (isNullOrEmpty(accesskey) == false && isNullOrEmpty(secretkey) == false
+				&& isNullOrEmpty(token) == false) {
 			return new AWSStaticCredentialsProvider(new BasicSessionCredentials(accesskey, secretkey, token));
-		} else if (accesskey != null && secretkey != null && !accesskey.isEmpty() && !secretkey.isEmpty()) {
+		} else if (isNullOrEmpty(accesskey) == false && isNullOrEmpty(secretkey) == false) {
 			return new AWSStaticCredentialsProvider(new BasicAWSCredentials(accesskey, secretkey));
 		}
 
@@ -99,21 +105,21 @@ public class MavenAwsCreateEcrRepository extends AbstractMojo {
 			try {
 				CreateRepositoryRequest request = new CreateRepositoryRequest().withRepositoryName(repository);
 
-				if (!mutable.isEmpty())
+				if (isNullOrEmpty(mutable) == false)
 					request.withImageTagMutability(
 							Boolean.valueOf(mutable) ? ImageTagMutability.MUTABLE : ImageTagMutability.IMMUTABLE);
 
-				if (!registryId.isEmpty())
+				if (isNullOrEmpty(registryId) == false)
 					request.withRegistryId(registryId);
 
-				if (!encryptionType.isEmpty()) {
+				if (isNullOrEmpty(encryptionType) == false) {
 					EncryptionConfiguration encryptionConfiguration = new EncryptionConfiguration();
 					EncryptionType encType = EncryptionType.fromValue(encryptionType);
 
 					encryptionConfiguration.setEncryptionType(encryptionType);
 
 					if (encType == EncryptionType.KMS) {
-						if (kmsKey.isEmpty())
+						if (isNullOrEmpty(kmsKey))
 							throw new KmsException("Missing key");
 
 						encryptionConfiguration.setKmsKey(kmsKey);
@@ -129,7 +135,7 @@ public class MavenAwsCreateEcrRepository extends AbstractMojo {
 				throw new MojoFailureException(e, "Create ECR repository", e.getErrorMessage());
 			}
 
-			if (!lifecycleUrl.isEmpty()) {
+			if (isNullOrEmpty(lifecycleUrl) == false) {
 				try {
 					applyLifecyclePolicy(ecr);
 				} catch (IOException e) {
@@ -143,7 +149,7 @@ public class MavenAwsCreateEcrRepository extends AbstractMojo {
 				}
 			}
 
-			if (!permissionsUrl.isEmpty()) {
+			if (isNullOrEmpty(permissionsUrl) == false) {
 				try {
 					applyPermissionsPolicy(ecr);
 				} catch (IOException e) {
@@ -167,7 +173,7 @@ public class MavenAwsCreateEcrRepository extends AbstractMojo {
 
 		DescribeRepositoriesRequest request = new DescribeRepositoriesRequest().withRepositoryNames(this.repository);
 
-		if (!registryId.isEmpty())
+		if (isNullOrEmpty(registryId))
 			request.withRegistryId(registryId);
 
 		try {
@@ -184,7 +190,7 @@ public class MavenAwsCreateEcrRepository extends AbstractMojo {
 		PutLifecyclePolicyRequest request = new PutLifecyclePolicyRequest().withRepositoryName(repository)
 				.withLifecyclePolicyText(text);
 
-		if (!registryId.isEmpty())
+		if (isNullOrEmpty(registryId) == false)
 			request.withRegistryId(registryId);
 
 		ecr.putLifecyclePolicy(request);
@@ -195,7 +201,7 @@ public class MavenAwsCreateEcrRepository extends AbstractMojo {
 		SetRepositoryPolicyRequest request = new SetRepositoryPolicyRequest().withRepositoryName(repository)
 				.withPolicyText(text);
 
-		if (!registryId.isEmpty())
+		if (isNullOrEmpty(registryId) == false)
 			request.withRegistryId(registryId);
 
 		ecr.setRepositoryPolicy(request);
