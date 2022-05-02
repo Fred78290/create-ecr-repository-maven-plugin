@@ -22,7 +22,7 @@ The documentation plugin is available [here](https://fred78290.github.io/delete-
     <build>
         <plugins>
             <plugin>
-                <groupId>com.aldunelabs.maven.codeartifact</groupId>
+                <groupId>com.aldunelabs.maven.ecr</groupId>
                 <artifactId>create-ecr-repository-maven-plugin</artifactId>
                 <version>1.0.0</version>
                 <configuration>
