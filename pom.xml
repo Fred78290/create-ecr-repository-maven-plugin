@@ -8,7 +8,7 @@
 	<groupId>com.aldunelabs.maven.ecr</groupId>
 	<artifactId>create-ecr-repository-maven-plugin</artifactId>
 	<packaging>maven-plugin</packaging>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 
 	<name>create-ecr-repository Maven Mojo</name>
 	<description>Maven Plugin to create ECR repository on aws</description>

@@ -71,6 +71,9 @@ public class MavenAwsCreateEcrRepository extends AbstractMojo {
 	@Parameter(defaultValue = "", name = "kmsKey", property = "ECR_KMS_KEY")
 	String kmsKey;
 
+	@Parameter(defaultValue = "false", name = "skip")
+	String skip;
+
 	private static boolean isNullOrEmpty(String str) {
 		if (str == null)
 			return true;
@@ -93,79 +96,85 @@ public class MavenAwsCreateEcrRepository extends AbstractMojo {
 
 	@Override
 	public void execute() throws MojoExecutionException, MojoFailureException {
-		AmazonECRClientBuilder builder = AmazonECRClientBuilder.standard().withRegion(region);
-		AWSCredentialsProvider credentialsProvider = buildCredentialsProvider();
+		dumpProperties();
 
-		if (credentialsProvider != null)
-			builder.withCredentials(credentialsProvider);
+		if (Boolean.valueOf(skip) == false) {
+			AmazonECRClientBuilder builder = AmazonECRClientBuilder.standard().withRegion(region);
+			AWSCredentialsProvider credentialsProvider = buildCredentialsProvider();
 
-		AmazonECR ecr = builder.build();
+			if (credentialsProvider != null)
+				builder.withCredentials(credentialsProvider);
 
-		if (isRepositoryExists(ecr) == false) {
-			try {
-				CreateRepositoryRequest request = new CreateRepositoryRequest().withRepositoryName(repository);
+			AmazonECR ecr = builder.build();
 
-				if (isNullOrEmpty(mutable) == false)
-					request.withImageTagMutability(
-							Boolean.valueOf(mutable) ? ImageTagMutability.MUTABLE : ImageTagMutability.IMMUTABLE);
+			if (isRepositoryExists(ecr) == false) {
+				try {
+					CreateRepositoryRequest request = new CreateRepositoryRequest().withRepositoryName(repository);
 
-				if (isNullOrEmpty(registryId) == false)
-					request.withRegistryId(registryId);
+					if (isNullOrEmpty(mutable) == false)
+						request.withImageTagMutability(
+								Boolean.valueOf(mutable) ? ImageTagMutability.MUTABLE : ImageTagMutability.IMMUTABLE);
 
-				if (isNullOrEmpty(encryptionType) == false) {
-					EncryptionConfiguration encryptionConfiguration = new EncryptionConfiguration();
-					EncryptionType encType = EncryptionType.fromValue(encryptionType);
+					if (isNullOrEmpty(registryId) == false)
+						request.withRegistryId(registryId);
 
-					encryptionConfiguration.setEncryptionType(encryptionType);
+					if (isNullOrEmpty(encryptionType) == false) {
+						EncryptionConfiguration encryptionConfiguration = new EncryptionConfiguration();
+						EncryptionType encType = EncryptionType.fromValue(encryptionType);
 
-					if (encType == EncryptionType.KMS) {
-						if (isNullOrEmpty(kmsKey))
-							throw new KmsException("Missing key");
+						encryptionConfiguration.setEncryptionType(encryptionType);
 
-						encryptionConfiguration.setKmsKey(kmsKey);
+						if (encType == EncryptionType.KMS) {
+							if (isNullOrEmpty(kmsKey))
+								throw new KmsException("Missing key");
+
+							encryptionConfiguration.setKmsKey(kmsKey);
+						}
+
+						request.setEncryptionConfiguration(encryptionConfiguration);
 					}
 
-					request.setEncryptionConfiguration(encryptionConfiguration);
-				}
-
-				ecr.createRepository(request);
-			} catch (AmazonECRException e) {
-				getLog().error(String.format("Unable to create ECR repository %s", repository), e);
-
-				throw new MojoFailureException(e, "Create ECR repository", e.getErrorMessage());
-			}
-
-			if (isNullOrEmpty(lifecycleUrl) == false) {
-				try {
-					applyLifecyclePolicy(ecr);
-				} catch (IOException e) {
-					getLog().warn(String.format("Unable to set lifecycle policy: %s on repository %s", lifecycleUrl,
-							repository), e);
+					ecr.createRepository(request);
 				} catch (AmazonECRException e) {
-					getLog().error(String.format("Unable to set lifecycle policy: %s on repository %s", lifecycleUrl,
-							repository), e);
+					getLog().error(String.format("Unable to create ECR repository %s", repository), e);
 
 					throw new MojoFailureException(e, "Create ECR repository", e.getErrorMessage());
 				}
-			}
 
-			if (isNullOrEmpty(permissionsUrl) == false) {
-				try {
-					applyPermissionsPolicy(ecr);
-				} catch (IOException e) {
-					getLog().warn(String.format("Unable to set permissions policy: %s on repository %s", permissionsUrl,
-							repository), e);
-				} catch (AmazonECRException e) {
-					getLog().error(String.format("Unable to set permissions policy: %s on repository %s",
-							permissionsUrl, repository), e);
+				if (isNullOrEmpty(lifecycleUrl) == false) {
+					try {
+						applyLifecyclePolicy(ecr);
+					} catch (IOException e) {
+						getLog().warn(String.format("Unable to set lifecycle policy: %s on repository %s", lifecycleUrl,
+								repository), e);
+					} catch (AmazonECRException e) {
+						getLog().error(String.format("Unable to set lifecycle policy: %s on repository %s",
+								lifecycleUrl, repository), e);
 
-					throw new MojoFailureException(e, "Create ECR repository", e.getErrorMessage());
+						throw new MojoFailureException(e, "Create ECR repository", e.getErrorMessage());
+					}
 				}
-			}
 
-			getLog().info(String.format("The ECR repository %s is created", repository));
+				if (isNullOrEmpty(permissionsUrl) == false) {
+					try {
+						applyPermissionsPolicy(ecr);
+					} catch (IOException e) {
+						getLog().warn(String.format("Unable to set permissions policy: %s on repository %s",
+								permissionsUrl, repository), e);
+					} catch (AmazonECRException e) {
+						getLog().error(String.format("Unable to set permissions policy: %s on repository %s",
+								permissionsUrl, repository), e);
+
+						throw new MojoFailureException(e, "Create ECR repository", e.getErrorMessage());
+					}
+				}
+
+				getLog().info(String.format("The ECR repository %s is created", repository));
+			} else {
+				getLog().info(String.format("The ECR repository %s already exists", repository));
+			}
 		} else {
-			getLog().info(String.format("The ECR repository %s already exists", repository));
+			getLog().info(String.format("The action to create ECR repository %s is skipped", repository));
 		}
 	}
 
@@ -213,4 +222,28 @@ public class MavenAwsCreateEcrRepository extends AbstractMojo {
 			return reader.lines().collect(Collectors.joining(System.lineSeparator()));
 		}
 	}
+
+	private void dumpProperty(String name, String value) {
+		if (isNullOrEmpty(value))
+			getLog().info(String.format("%s not defined", name));
+		else
+			getLog().info(String.format("%s=%s", name, value));
+	}
+
+	private void dumpProperties() {
+		dumpProperty("region", region);
+		dumpProperty("repository", repository);
+		dumpProperty("profile", profile);
+		dumpProperty("accesskey", accesskey);
+		dumpProperty("secretkey", secretkey);
+		dumpProperty("token", token);
+		dumpProperty("registryId", registryId);
+		dumpProperty("mutable", mutable);
+		dumpProperty("lifecycleUrl", lifecycleUrl);
+		dumpProperty("permissionsUrl", permissionsUrl);
+		dumpProperty("encryptionType", encryptionType);
+		dumpProperty("kmsKey", kmsKey);
+		dumpProperty("skip", skip);
+	}
+
 }
